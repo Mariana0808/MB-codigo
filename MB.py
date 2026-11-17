@@ -1,3 +1,4 @@
+
 import pickle
 import os
 
@@ -19,6 +20,30 @@ class Produto:
         self.nome = nome
         self.marca = marca
         self.preco_unitario = preco_unitario
+
+
+class fornacedor:
+    def __init__(self, id_fornecedor, nome, cnpj, endereço, telefone):
+        self.id_fornecedor = id_fornecedor
+        self.nome = nome
+        self.cnpj = cnpj
+        self.endereço = endereço
+        self.telefone = telefone
+
+
+class notificacao:
+    def __init__(self, id_notificacao, mensagem, data):
+        self.id_notificacao = id_notificacao
+        self.mensagem = mensagem
+        self.data = data
+
+
+class movimentacao:
+    def __init__(self, id_movimentacao, tipo, quantidade, data):
+        self.id_movimentacao = id_movimentacao
+        self.tipo = tipo
+        self.quantidade = quantidade
+        self.data = data
 
 
 class Sistema:
