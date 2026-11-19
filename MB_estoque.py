@@ -1,14 +1,10 @@
 import pickle
 import os
-from datetime import datetime, date, timedelta
 
-
-# ==============================
-# CLASSES
-# ==============================
 
 class Usuario:
-    def __init__(self, cpf, cnpj, email, senha, tipo_usuario):
+    def __init__(self, id_usuario, cpf, cnpj, email, senha, tipo_usuario):
+        self.id_usuario = id_usuario
         self.cpf = cpf
         self.cnpj = cnpj
         self.email = email
@@ -17,104 +13,118 @@ class Usuario:
 
 
 class Produto:
-    def __init__(self, codigo, nome, marca, preco_unitario, quantidade, validade):
+    def __init__(self, id_produto, codigo, nome, marca, preco_unitario, cnpj_vendedor):
+        self.id_produto = id_produto
         self.codigo = codigo
         self.nome = nome
         self.marca = marca
         self.preco_unitario = preco_unitario
+        self.cnpj_vendedor = cnpj_vendedor
+
+
+class Fornecedor:
+    def __init__(self, id_fornecedor, nome, cnpj, endereco, telefone):
+        self.id_fornecedor = id_fornecedor
+        self.nome = nome
+        self.cnpj = cnpj
+        self.endereco = endereco
+        self.telefone = telefone
+
+
+class Notificacao:
+    def __init__(self, id_notificacao, mensagem, data):
+        self.id_notificacao = id_notificacao
+        self.mensagem = mensagem
+        self.data = data
+
+
+class Movimentacao:
+    def __init__(self, id_movimentacao, tipo, quantidade, data):
+        self.id_movimentacao = id_movimentacao
+        self.tipo = tipo
         self.quantidade = quantidade
-        self.validade = validade
+        self.data = data
 
-
-# ==============================
-# SISTEMA
-# ==============================
 
 class Sistema:
-
     def __init__(self):
-        self.usuarios = self.carregar_dados("usuarios.pkl")
-        self.produtos = self.carregar_dados("produtos.pkl")
-        self.movimentacoes = self.carregar_dados("movimentacoes.pkl")
+        self.usuarios = []
+        self.produtos = []
+        self.fornecedores = []
+        self.notificacoes = []
+        self.movimentacoes = []
+        self.carregar_dados()
 
-    def carregar_dados(self, arquivo):
-        if os.path.exists(arquivo):
-            try:
-                with open(arquivo, "rb") as f:
-                    return pickle.load(f)
-            except:
-                return []
-        return []
+    def carregar_dados(self):
+        arquivos = [
+            ("usuarios.pkl", "usuarios"),
+            ("produtos.pkl", "produtos"),
+            ("fornecedores.pkl", "fornecedores"),
+            ("notificacoes.pkl", "notificacoes"),
+            ("movimentacoes.pkl", "movimentacoes")
+        ]
 
-    def salvar_dados(self):
-        with open("usuarios.pkl", "wb") as f:
-            pickle.dump(self.usuarios, f)
+        for nome_arquivo, lista in arquivos:
+            if os.path.exists(nome_arquivo):
+                with open(nome_arquivo, "rb") as arquivo:
+                    setattr(self, lista, pickle.load(arquivo))
 
-        with open("produtos.pkl", "wb") as f:
-            pickle.dump(self.produtos, f)
+    def salvar_usuarios(self):
+        with open("usuarios.pkl", "wb") as arquivo:
+            pickle.dump(self.usuarios, arquivo)
 
-        with open("movimentacoes.pkl", "wb") as f:
-            pickle.dump(self.movimentacoes, f)
+    def salvar_produtos(self):
+        with open("produtos.pkl", "wb") as arquivo:
+            pickle.dump(self.produtos, arquivo)
 
-    # ==============================
-    # CADASTRO DE USUÁRIO
-    # ==============================
+    def salvar_fornecedores(self):
+        with open("fornecedores.pkl", "wb") as arquivo:
+            pickle.dump(self.fornecedores, arquivo)
+
+    def salvar_notificacoes(self):
+        with open("notificacoes.pkl", "wb") as arquivo:
+            pickle.dump(self.notificacoes, arquivo)
+
+    def salvar_movimentacoes(self):
+        with open("movimentacoes.pkl", "wb") as arquivo:
+            pickle.dump(self.movimentacoes, arquivo)
 
     def cadastrar_usuario(self):
-
         print("\n--- CADASTRO DE USUÁRIO ---")
 
+        id_usuario = len(self.usuarios) + 1
         cpf = input("Digite seu CPF: ")
-        cnpj = input("Digite seu CNPJ: ")
+        cnpj = input("Digite o CNPJ da loja: ")
         email = input("Digite seu e-mail: ")
         senha = input("Digite sua senha: ")
 
-        print("\nEscolha o tipo de usuário:")
-        print("1 - Vendedor")
+        print("\n1 - Vendedor")
         print("2 - Visualizador")
-
-        tipo = input("Escolha: ")
+        tipo = input("Escolha o tipo de usuário: ")
 
         if tipo == "1":
-            tipo_usuario = "Vendedor"
+            tipo_usuario = "vendedor"
         elif tipo == "2":
-            tipo_usuario = "Visualizador"
+            tipo_usuario = "visualizador"
         else:
-            print("Opção inválida!")
+            print("Tipo de usuário inválido!")
             return
 
-        # Verificar dados duplicados
         for usuario in self.usuarios:
-
-            if getattr(usuario, "cpf", None) == cpf:
-                print("Erro: este CPF já está cadastrado!")
+            if usuario.email == email:
+                print("E-mail já cadastrado!")
                 return
 
-            if getattr(usuario, "cnpj", None) == cnpj:
-                print("Erro: este CNPJ já está cadastrado!")
-                return
-
-            if getattr(usuario, "email", None) == email:
-                print("Erro: este e-mail já está cadastrado!")
-                return
-
-            if getattr(usuario, "senha", None) == senha:
-                print("Erro: esta senha já está sendo utilizada!")
-                return
-
-        novo_usuario = Usuario(cpf, cnpj, email, senha, tipo_usuario)
+        novo_usuario = Usuario(
+            id_usuario, cpf, cnpj, email, senha, tipo_usuario
+        )
 
         self.usuarios.append(novo_usuario)
-        self.salvar_dados()
+        self.salvar_usuarios()
 
         print("Usuário cadastrado com sucesso!")
 
-    # ==============================
-    # LOGIN
-    # ==============================
-
     def fazer_login(self):
-
         print("\n--- LOGIN ---")
 
         email = input("Digite seu e-mail: ")
@@ -128,434 +138,146 @@ class Sistema:
         print("E-mail ou senha incorretos!")
         return None
 
-    # ==============================
-    # LISTAR PRODUTOS
-    # ==============================
+    def listar_produtos(self, cnpj):
+        print("\n--- ESTOQUE DA LOJA ---")
 
-    def listar_produtos(self):
-
-        print("\n--- PRODUTOS CADASTRADOS ---")
-
-        if not self.produtos:
-            print("Nenhum produto cadastrado!")
-            return
+        encontrados = False
 
         for produto in self.produtos:
-            print("-------------------------")
-            print("Código:", produto.codigo)
-            print("Nome:", produto.nome)
-            print("Marca:", produto.marca)
-            print("Preço unitário: R$", produto.preco_unitario)
-            print("Quantidade:", getattr(produto, "quantidade", 0))
-            print("Validade:", getattr(produto, "validade", "Não informada"))
+            if getattr(produto, "cnpj_vendedor", "") == cnpj:
+                print("\nCódigo:", produto.codigo)
+                print("Nome:", produto.nome)
+                print("Marca:", produto.marca)
+                print("Preço unitário: R$", produto.preco_unitario)
+                encontrados = True
 
-    # ==============================
-    # CADASTRAR PRODUTO
-    # ==============================
+        if not encontrados:
+            print("Nenhum produto encontrado para esse CNPJ.")
 
-    def cadastrar_produto(self):
+    def cadastrar_produto(self, usuario):
+        print("\n--- CADASTRO DE PRODUTO ---")
 
-        print("\n--- CADASTRAR PRODUTO ---")
-
-        codigo = input("Código: ")
+        id_produto = len(self.produtos) + 1
+        codigo = input("Digite o código do produto: ")
 
         for produto in self.produtos:
-            if produto.codigo == codigo:
-                print("Já existe um produto com esse código!")
+            if (produto.codigo == codigo and
+                    getattr(produto, "cnpj_vendedor", "") == usuario.cnpj):
+                print("Código já cadastrado nessa loja!")
                 return
 
-        nome = input("Nome: ")
-        marca = input("Marca: ")
+        nome = input("Digite o nome do produto: ")
+        marca = input("Digite a marca: ")
+        preco_unitario = float(input("Digite o preço unitário: R$ "))
 
-        try:
-            preco = float(input("Preço unitário: R$ "))
-            quantidade = int(input("Quantidade: "))
-        except ValueError:
-            print("Digite valores numéricos válidos!")
-            return
+        novo_produto = Produto(
+            id_produto, codigo, nome, marca,
+            preco_unitario, usuario.cnpj
+        )
 
-        validade = input("Validade (DD/MM/AAAA): ")
-
-        try:
-            datetime.strptime(validade, "%d/%m/%Y")
-        except ValueError:
-            print("Data inválida!")
-            return
-
-        if preco < 0 or quantidade < 0:
-            print("Preço e quantidade não podem ser negativos!")
-            return
-
-        produto = Produto(codigo, nome, marca, preco, quantidade, validade)
-
-        self.produtos.append(produto)
-        self.salvar_dados()
+        self.produtos.append(novo_produto)
+        self.salvar_produtos()
 
         print("Produto cadastrado com sucesso!")
 
-    # ==============================
-    # EDITAR PRODUTO
-    # ==============================
-
-    def editar_produto(self):
-
+    def editar_produto(self, usuario):
         print("\n--- EDITAR PRODUTO ---")
 
-        codigo = input("Digite o código do produto: ")
+        codigo = input("Digite o código do produto que deseja editar: ")
 
         for produto in self.produtos:
+            if (produto.codigo == codigo and
+                    getattr(produto, "cnpj_vendedor", "") == usuario.cnpj):
 
-            if produto.codigo == codigo:
+                print("Produto encontrado!")
 
                 produto.nome = input("Novo nome: ")
                 produto.marca = input("Nova marca: ")
+                produto.preco_unitario = float(input("Novo preço: R$ "))
 
-                try:
-                    produto.preco_unitario = float(input("Novo preço: R$ "))
-                    produto.quantidade = int(input("Nova quantidade: "))
-                except ValueError:
-                    print("Valores inválidos!")
-                    return
+                self.salvar_produtos()
 
-                validade = input("Nova validade (DD/MM/AAAA): ")
-
-                try:
-                    datetime.strptime(validade, "%d/%m/%Y")
-                except ValueError:
-                    print("Data inválida!")
-                    return
-
-                produto.validade = validade
-
-                self.salvar_dados()
                 print("Produto atualizado com sucesso!")
                 return
 
-        print("Produto não encontrado!")
+        print("Produto não encontrado na sua loja!")
 
-    # ==============================
-    # EXCLUIR PRODUTO
-    # ==============================
-
-    def excluir_produto(self):
-
+    def excluir_produto(self, usuario):
         print("\n--- EXCLUIR PRODUTO ---")
 
-        codigo = input("Digite o código do produto: ")
+        codigo = input("Digite o código do produto que deseja excluir: ")
 
         for produto in self.produtos:
+            if (produto.codigo == codigo and
+                    getattr(produto, "cnpj_vendedor", "") == usuario.cnpj):
 
-            if produto.codigo == codigo:
+                print("Produto:", produto.nome)
 
-                self.produtos.remove(produto)
-                self.salvar_dados()
+                confirmar = input("Deseja realmente excluir? (s/n): ")
 
-                print("Produto excluído com sucesso!")
+                if confirmar.lower() == "s":
+                    self.produtos.remove(produto)
+                    self.salvar_produtos()
+                    print("Produto excluído com sucesso!")
+                else:
+                    print("Exclusão cancelada!")
+
                 return
 
-        print("Produto não encontrado!")
+        print("Produto não encontrado na sua loja!")
 
-    # ==============================
-    # PESQUISAR PRODUTO
-    # ==============================
+    def menu_vendedor(self, usuario):
+        while True:
+            print("\n===== MENU DO VENDEDOR =====")
+            print("1 - Listar meus produtos")
+            print("2 - Cadastrar produto")
+            print("3 - Editar produto")
+            print("4 - Excluir produto")
+            print("5 - Voltar")
 
-    def pesquisar_produto(self):
+            opcao = input("Escolha uma opção: ")
 
-        print("\n--- PESQUISAR PRODUTO ---")
+            if opcao == "1":
+                self.listar_produtos(usuario.cnpj)
 
-        busca = input("Digite o nome ou código do produto: ").lower()
+            elif opcao == "2":
+                self.cadastrar_produto(usuario)
 
-        encontrado = False
+            elif opcao == "3":
+                self.editar_produto(usuario)
 
-        for produto in self.produtos:
+            elif opcao == "4":
+                self.excluir_produto(usuario)
 
-            if busca in produto.nome.lower() or busca == produto.codigo.lower():
+            elif opcao == "5":
+                break
 
-                print("-------------------------")
-                print("Código:", produto.codigo)
-                print("Nome:", produto.nome)
-                print("Marca:", produto.marca)
-                print("Preço: R$", produto.preco_unitario)
-                print("Quantidade:", getattr(produto, "quantidade", 0))
-                print("Validade:", getattr(produto, "validade", "Não informada"))
+            else:
+                print("Opção inválida!")
 
-                encontrado = True
+    def menu_visualizador(self):
+        while True:
+            print("\n===== MENU DO VISUALIZADOR =====")
+            print("1 - Consultar estoque de uma loja")
+            print("2 - Voltar")
 
-        if not encontrado:
-            print("Produto não encontrado!")
+            opcao = input("Escolha uma opção: ")
 
-    # ==============================
-    # ENTRADA DE ESTOQUE
-    # ==============================
+            if opcao == "1":
+                cnpj = input("Digite o CNPJ do vendedor: ")
+                self.listar_produtos(cnpj)
 
-    def entrada_estoque(self):
+            elif opcao == "2":
+                break
 
-        print("\n--- ENTRADA DE ESTOQUE ---")
+            else:
+                print("Opção inválida!")
 
-        codigo = input("Código do produto: ")
-
-        for produto in self.produtos:
-
-            if produto.codigo == codigo:
-
-                try:
-                    quantidade = int(input("Quantidade de entrada: "))
-                except ValueError:
-                    print("Digite uma quantidade válida!")
-                    return
-
-                if quantidade <= 0:
-                    print("A quantidade deve ser maior que zero!")
-                    return
-
-                produto.quantidade = getattr(produto, "quantidade", 0) + quantidade
-
-                self.movimentacoes.append(
-                    f"Entrada de {quantidade} unidades do produto {produto.nome} - {datetime.now()}"
-                )
-
-                self.salvar_dados()
-
-                print("Entrada registrada com sucesso!")
-                return
-
-        print("Produto não encontrado!")
-
-    # ==============================
-    # SAÍDA DE ESTOQUE
-    # ==============================
-
-    def saida_estoque(self):
-
-        print("\n--- SAÍDA DE ESTOQUE ---")
-
-        codigo = input("Código do produto: ")
-
-        for produto in self.produtos:
-
-            if produto.codigo == codigo:
-
-                try:
-                    quantidade = int(input("Quantidade de saída: "))
-                except ValueError:
-                    print("Digite uma quantidade válida!")
-                    return
-
-                if quantidade <= 0:
-                    print("A quantidade deve ser maior que zero!")
-                    return
-
-                if quantidade > getattr(produto, "quantidade", 0):
-                    print("Estoque insuficiente!")
-                    return
-
-                produto.quantidade -= quantidade
-
-                self.movimentacoes.append(
-                    f"Saída de {quantidade} unidades do produto {produto.nome} - {datetime.now()}"
-                )
-
-                self.salvar_dados()
-
-                print("Saída registrada com sucesso!")
-                return
-
-        print("Produto não encontrado!")
-
-    # ==============================
-    # PRODUTOS COM ESTOQUE BAIXO
-    # ==============================
-
-    def estoque_baixo(self):
-
-        print("\n--- PRODUTOS COM ESTOQUE BAIXO ---")
-
-        encontrado = False
-
-        for produto in self.produtos:
-
-            if getattr(produto, "quantidade", 0) <= 5:
-
-                print(produto.nome, "- Quantidade:", produto.quantidade)
-                encontrado = True
-
-        if not encontrado:
-            print("Nenhum produto com estoque baixo!")
-
-    # ==============================
-    # PRODUTOS PRÓXIMOS DO VENCIMENTO
-    # ==============================
-
-    def produtos_vencimento(self):
-
-        print("\n--- PRODUTOS PRÓXIMOS DO VENCIMENTO ---")
-
-        hoje = date.today()
-        limite = hoje + timedelta(days=30)
-
-        encontrado = False
-
-        for produto in self.produtos:
-
-            validade = getattr(produto, "validade", None)
-
-            if not validade:
-                continue
-
-            try:
-                data_validade = datetime.strptime(validade, "%d/%m/%Y").date()
-            except ValueError:
-                continue
-
-            if hoje <= data_validade <= limite:
-
-                print(produto.nome, "- Validade:", validade)
-                encontrado = True
-
-        if not encontrado:
-            print("Nenhum produto próximo do vencimento!")
-
-    # ==============================
-    # VALOR TOTAL DO ESTOQUE
-    # ==============================
-
-    def valor_total_estoque(self):
-
-        total = 0
-
-        for produto in self.produtos:
-
-            quantidade = getattr(produto, "quantidade", 0)
-            total += produto.preco_unitario * quantidade
-
-        print("\nValor total do estoque: R$", round(total, 2))
-
-    # ==============================
-    # HISTÓRICO DE MOVIMENTAÇÕES
-    # ==============================
-
-    def historico_movimentacoes(self):
-
-        print("\n--- HISTÓRICO DE MOVIMENTAÇÕES ---")
-
-        if not self.movimentacoes:
-            print("Nenhuma movimentação registrada!")
-            return
-
-        for movimentacao in self.movimentacoes:
-            print(movimentacao)
-
-
-# ==============================
-# MENU DO VENDEDOR
-# ==============================
-
-def menu_vendedor(sistema):
-
-    while True:
-
-        print("\n===== MENU DO VENDEDOR =====")
-        print("1 - Listar produtos")
-        print("2 - Cadastrar produto")
-        print("3 - Editar produto")
-        print("4 - Excluir produto")
-        print("5 - Pesquisar produto")
-        print("6 - Entrada de estoque")
-        print("7 - Saída de estoque")
-        print("8 - Produtos com estoque baixo")
-        print("9 - Produtos próximos do vencimento")
-        print("10 - Valor total do estoque")
-        print("11 - Histórico de movimentações")
-        print("12 - Sair")
-
-        opcao = input("Escolha uma opção: ")
-
-        if opcao == "1":
-            sistema.listar_produtos()
-
-        elif opcao == "2":
-            sistema.cadastrar_produto()
-
-        elif opcao == "3":
-            sistema.editar_produto()
-
-        elif opcao == "4":
-            sistema.excluir_produto()
-
-        elif opcao == "5":
-            sistema.pesquisar_produto()
-
-        elif opcao == "6":
-            sistema.entrada_estoque()
-
-        elif opcao == "7":
-            sistema.saida_estoque()
-
-        elif opcao == "8":
-            sistema.estoque_baixo()
-
-        elif opcao == "9":
-            sistema.produtos_vencimento()
-
-        elif opcao == "10":
-            sistema.valor_total_estoque()
-
-        elif opcao == "11":
-            sistema.historico_movimentacoes()
-
-        elif opcao == "12":
-            print("Saindo do menu do vendedor...")
-            break
-
-        else:
-            print("Opção inválida!")
-
-
-# ==============================
-# MENU DO VISUALIZADOR
-# ==============================
-
-def menu_visualizador(sistema):
-
-    while True:
-
-        print("\n===== MENU DO VISUALIZADOR =====")
-        print("1 - Listar produtos")
-        print("2 - Pesquisar produto")
-        print("3 - Produtos próximos do vencimento")
-        print("4 - Produtos com estoque baixo")
-        print("5 - Sair")
-
-        opcao = input("Escolha uma opção: ")
-
-        if opcao == "1":
-            sistema.listar_produtos()
-
-        elif opcao == "2":
-            sistema.pesquisar_produto()
-
-        elif opcao == "3":
-            sistema.produtos_vencimento()
-
-        elif opcao == "4":
-            sistema.estoque_baixo()
-
-        elif opcao == "5":
-            print("Saindo do menu do visualizador...")
-            break
-
-        else:
-            print("Opção inválida!")
-
-
-# ==============================
-# INÍCIO DO SISTEMA
-# ==============================
 
 sistema = Sistema()
 
-while True:
 
+while True:
     print("\n===== SISTEMA DE ESTOQUE =====")
     print("1 - Cadastrar usuário")
     print("2 - Fazer login")
@@ -564,26 +286,22 @@ while True:
     opcao = input("Escolha uma opção: ")
 
     if opcao == "1":
-
         sistema.cadastrar_usuario()
 
     elif opcao == "2":
+        usuario = sistema.fazer_login()
 
-        usuario_logado = sistema.fazer_login()
+        if usuario:
+            if usuario.tipo_usuario == "vendedor":
+                sistema.menu_vendedor(usuario)
 
-        if usuario_logado is not None:
-
-            if usuario_logado.tipo_usuario.lower() == "vendedor":
-                menu_vendedor(sistema)
-
-            elif usuario_logado.tipo_usuario.lower() == "visualizador":
-                menu_visualizador(sistema)
+            elif usuario.tipo_usuario == "visualizador":
+                sistema.menu_visualizador()
 
             else:
                 print("Tipo de usuário não reconhecido!")
 
     elif opcao == "3":
-
         print("Sistema encerrado!")
         break
 
